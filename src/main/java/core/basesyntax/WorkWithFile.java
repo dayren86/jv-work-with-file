@@ -1,24 +1,19 @@
 package core.basesyntax;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 public class WorkWithFile {
 
     public void getStatistic(String fromFileName, String toFileName) {
-        File file = new File(fromFileName);
-        List<String> strings;
         int buy = 0;
         int supply = 0;
 
-        try {
-            strings = Files.readAllLines(file.toPath());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        List<String> strings = readDataFromFile(fromFileName);
 
         for (String string : strings) {
             String[] split = string.split(",");
@@ -30,25 +25,36 @@ public class WorkWithFile {
                 supply += Integer.parseInt(split[1]);
             }
         }
+        StringBuilder report = createReport(buy, supply);
 
-        String[] result = {"supply," + supply + System.lineSeparator()
-                + "buy," + buy + System.lineSeparator()
-                + "result," + (supply - buy)};
+        writeDataToFile(toFileName, report);
+    }
 
-        File file1 = new File(toFileName);
-        try {
-            file1.createNewFile();
+    public StringBuilder createReport(int buy, int supply) {
+        return new StringBuilder().append("supply,").append(supply).append(System.lineSeparator())
+                .append("buy,").append(buy).append(System.lineSeparator())
+                .append("result,").append(supply - buy);
+    }
+
+    public void writeDataToFile(String toFileName, StringBuilder stringBuilder) {
+        File file = new File(toFileName);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.append(stringBuilder);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Can't write" + toFileName, e);
+        }
+    }
+
+    public List<String> readDataFromFile(String fromFileName) {
+        List<String> strings;
+
+        try {
+            strings = Files.readAllLines(new File(fromFileName).toPath());
+        } catch (IOException e) {
+            throw new RuntimeException("Can't read data from file " + fromFileName,e);
         }
 
-        for (String string : result) {
-            try {
-                Files.write(file1.toPath(), string.getBytes(), StandardOpenOption.APPEND);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
+        return strings;
     }
 }
